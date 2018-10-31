@@ -74,9 +74,10 @@ void qrcode_detection_impl::imageCallback(const sensor_msgs::ImageConstPtr& imag
   cv::Mat rotation_matrix = cv::Mat::eye(2,3,CV_32FC1);
   double rotation_angle = 0.0;
 
-  ROS_DEBUG("Received new image with %u x %u pixels.", image->width, image->height);
+  ROS_INFO("Received new image with %u x %u pixels.", image->width, image->height);
 
   if (!rotation_target_frame_id_.empty() && listener_) {
+    ROS_INFO("TF OK1 Received new image with %u x %u pixels.", image->width, image->height);
     tf::StampedTransform transform;
     std::string source_frame_id_ = rotation_source_frame_id_.empty() ? image->header.frame_id : rotation_source_frame_id_;
     try
@@ -87,6 +88,7 @@ void qrcode_detection_impl::imageCallback(const sensor_msgs::ImageConstPtr& imag
       ROS_ERROR("%s", e.what());
       return;
     }
+    ROS_INFO("TF OK2 Received new image with %u x %u pixels.", image->width, image->height);
 
     // calculate rotation angle
     tfScalar roll, pitch, yaw;
@@ -118,8 +120,10 @@ void qrcode_detection_impl::imageCallback(const sensor_msgs::ImageConstPtr& imag
       cv_bridge::CvImage *temp = new cv_bridge::CvImage(*cv_image);
       cv::warpAffine(in_image, temp->image, rotation_matrix, cv::Size(out_size, out_size));
       cv_image.reset(temp);
+    ROS_INFO("TF OK3 Received new image with %u x %u pixels.", image->width, image->height);
 
       if (rotated_image_publisher_.getNumSubscribers() > 0) {
+        ROS_INFO("TF OK4 Received new image with %u x %u pixels.", image->width, image->height);
         sensor_msgs::Image rotated_image;
         cv_image->toImageMsg(rotated_image);
         rotated_image_publisher_.publish(rotated_image, *camera_info);
@@ -131,6 +135,7 @@ void qrcode_detection_impl::imageCallback(const sensor_msgs::ImageConstPtr& imag
       return;
     }
   }
+  ROS_INFO("TF OK5 Received new image with %u x %u pixels.", image->width, image->height);
 
   // wrap image data
   Image zbar(cv_image->image.cols, cv_image->image.rows, "Y800", cv_image->image.data, cv_image->image.cols * cv_image->image.rows);
@@ -144,6 +149,8 @@ void qrcode_detection_impl::imageCallback(const sensor_msgs::ImageConstPtr& imag
   percept.camera_info = *camera_info;
   percept.info.class_id = "qrcode";
   percept.info.class_support = 1.0;
+
+  ROS_INFO("TF OK6 Received new image with %u x %u pixels.", image->width, image->height);
 
   for(Image::SymbolIterator symbol = zbar.symbol_begin(); symbol != zbar.symbol_end(); ++symbol) {
     ROS_DEBUG_STREAM("Decoded " << symbol->get_type_name() << " symbol \"" << symbol->get_data() << '"');
